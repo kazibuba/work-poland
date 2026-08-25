@@ -85,6 +85,15 @@
             font-size: 16px; 
             margin-bottom: 10px; 
         }
+        
+        /* Стили для заблокированного поля цены */
+        input:disabled {
+            background-color: #f2f2f7;
+            color: #3a3a3c;
+            font-weight: bold;
+            border-color: #e5e5ea;
+        }
+
         button { background: #007aff; color: white; border: none; font-weight: bold; cursor: pointer; }
         button:active { opacity: 0.8; }
         
@@ -128,7 +137,8 @@
         <select id="partSelect" onchange="updatePrice()"></select>
 
         <label>Cena za szt. (PLN)</label>
-        <input type="number" id="partPrice" step="0.01" placeholder="0.00">
+        <!-- Поле теперь заблокировано (disabled), изменить его вручную нельзя -->
+        <input type="number" id="partPrice" disabled placeholder="0.00">
 
         <label>Ilość (szt.)</label>
         <input type="number" id="partCount" placeholder="Wprowadź ilość">
@@ -256,7 +266,7 @@
             const count = parseInt(document.getElementById('partCount').value);
 
             if (!name || name === 'Brak części' || isNaN(price) || isNaN(count) || count <= 0) {
-                return alert('Wybierz część i podaj poprawną ilość');
+                return alert('Wybierz część i podaj poprawnую ilość');
             }
 
             const total = price * count;
@@ -332,7 +342,7 @@
                 container.appendChild(div);
             });
 
-            document.getElementById('archiveSummary').textContent = `Suma za ${selectedMonth}: ${totalForSelectedMonth.toFixed(2)} PLN`;
+            document.getElementById('archiveSummary').textContent = `Suma za ${selectedMonth}: ${totalForSelectedManager = totalForSelectedMonth.toFixed(2)} PLN`;
         }
 
         function clearData() {
