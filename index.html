@@ -137,7 +137,6 @@
         <select id="partSelect" onchange="updatePrice()"></select>
 
         <label>Cena za szt. (PLN)</label>
-        <!-- Поле теперь заблокировано (disabled), изменить его вручную нельзя -->
         <input type="number" id="partPrice" disabled placeholder="0.00">
 
         <label>Ilość (szt.)</label>
@@ -153,7 +152,7 @@
             <div class="settings-content">
                 
                 <!-- ARCHIWUM MIESIĘCY -->
-                <h3>📅 Archiwum miesięcy</h3>
+                <h3>📅 Archiwum miesięcy i Historia</h3>
                 <label>Wybierz miesiąc:</label>
                 <input type="month" id="archiveMonth" onchange="renderArchive()">
                 <div id="archiveSummary" class="archive-total">Suma za miesiąc: 0 PLN</div>
@@ -266,7 +265,7 @@
             const count = parseInt(document.getElementById('partCount').value);
 
             if (!name || name === 'Brak części' || isNaN(price) || isNaN(count) || count <= 0) {
-                return alert('Wybierz część i podaj poprawnую ilość');
+                return alert('Wybierz część i podaj poprawną ilość');
             }
 
             const total = price * count;
@@ -285,6 +284,16 @@
 
             renderStats();
             renderArchive();
+        }
+
+        // Функция удаления записи из истории по её id
+        function deleteLogEntry(id) {
+            if (confirm('Czy na pewno chcesz usunąć ten wpis?')) {
+                logs = logs.filter(item => item.id !== id);
+                localStorage.setItem('work_logs', JSON.stringify(logs));
+                renderStats();
+                renderArchive();
+            }
         }
 
         function renderStats() {
@@ -325,6 +334,10 @@
                 return item.date.startsWith(selectedMonth);
             });
 
+            if (filteredLogs.length === 0) {
+                container.innerHTML = '<div style="color: #8e8e93; font-size: 14px; padding: 5px 0;">Brak wpisów w tym miesiącu</div>';
+            }
+
             filteredLogs.forEach(item => {
                 totalForSelectedMonth += item.total;
                 const d = new Date(item.date);
@@ -337,16 +350,19 @@
                         <strong>${item.name}</strong> (${item.count} szt. × ${item.price} PLN)<br>
                         <small style="color:#8e8e93">${timeStr}</small>
                     </div>
-                    <div style="font-weight:bold">${item.total.toFixed(2)} PLN</div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-weight:bold">${item.total.toFixed(2)} PLN</span>
+                        <button class="btn-del" onclick="deleteLogEntry(${item.id})">Usuń</button>
+                    </div>
                 `;
                 container.appendChild(div);
             });
 
-            document.getElementById('archiveSummary').textContent = `Suma za ${selectedMonth}: ${totalForSelectedManager = totalForSelectedMonth.toFixed(2)} PLN`;
+            document.getElementById('archiveSummary').textContent = `Suma za ${selectedMonth}: ${totalForSelectedMonth.toFixed(2)} PLN`;
         }
 
         function clearData() {
-            if (confirm('Czy na pewno chcesz usunąć całą historię i części?')) {
+            if (confirm('Czy na pewno chcesz usunąć caлую historię i części?')) {
                 localStorage.clear();
                 location.reload();
             }
