@@ -86,7 +86,6 @@
             margin-bottom: 10px; 
         }
         
-        /* Стили для заблокированного поля цены */
         input:disabled {
             background-color: #f2f2f7;
             color: #3a3a3c;
@@ -286,7 +285,6 @@
             renderArchive();
         }
 
-        // Функция удаления записи из истории по её id
         function deleteLogEntry(id) {
             if (confirm('Czy na pewno chcesz usunąć ten wpis?')) {
                 logs = logs.filter(item => item.id !== id);
@@ -362,7 +360,7 @@
         }
 
         function clearData() {
-            if (confirm('Czy na pewno chcesz usunąć caлую historię i części?')) {
+            if (confirm('Czy na pewno chcesz usunąć całą historię i części?')) {
                 localStorage.clear();
                 location.reload();
             }
