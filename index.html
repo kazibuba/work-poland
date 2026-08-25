@@ -96,7 +96,7 @@
         button { background: #007aff; color: white; border: none; font-weight: bold; cursor: pointer; }
         button:active { opacity: 0.8; }
         
-        .history-item, .part-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; font-size: 15px; }
+        .history-item, .part-item, .stats-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; font-size: 15px; }
         .btn-del { background: #ff3b30; width: auto; padding: 6px 12px; margin: 0; font-size: 13px; }
         .archive-total { font-weight: bold; font-size: 17px; color: #34c759; margin-bottom: 12px; }
         
@@ -156,6 +156,16 @@
                 <input type="month" id="archiveMonth" onchange="renderArchive()">
                 <div id="archiveSummary" class="archive-total">Suma za miesiąc: 0 PLN</div>
                 <div id="archiveList" style="margin-bottom: 20px;"></div>
+
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+                <!-- ILOŚĆ CZĘŚCI (UKRYTE W USTAWIENIACH) -->
+                <h3>📦 Liczba wykonanych części</h3>
+                <div style="margin-bottom: 8px; font-weight: 600; color: #555;">Za wybrany miesiąc:</div>
+                <div id="partsCountMonthList" style="margin-bottom: 15px;"></div>
+                
+                <div style="margin-bottom: 8px; font-weight: 600; color: #555;">Za cały okres:</div>
+                <div id="partsCountTotalList" style="margin-bottom: 20px;"></div>
 
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
 
@@ -357,6 +367,55 @@
             });
 
             document.getElementById('archiveSummary').textContent = `Suma za ${selectedMonth}: ${totalForSelectedMonth.toFixed(2)} PLN`;
+
+            renderPartsCounts(selectedMonth);
+        }
+
+        function renderPartsCounts(selectedMonth) {
+            const monthContainer = document.getElementById('partsCountMonthList');
+            const totalContainer = document.getElementById('partsCountTotalList');
+            
+            monthContainer.innerHTML = '';
+            totalContainer.innerHTML = '';
+
+            let monthCounts = {};
+            let totalCounts = {};
+
+            // Podsumowanie za wybrany miesiąc
+            logs.filter(item => item.date.startsWith(selectedMonth)).forEach(item => {
+                monthCounts[item.name] = (monthCounts[item.name] || 0) + item.count;
+            });
+
+            // Podsumowanie za cały okres
+            logs.forEach(item => {
+                totalCounts[item.name] = (totalCounts[item.name] || 0) + item.count;
+            });
+
+            // Wyświetlenie za miesiąc
+            const monthKeys = Object.keys(monthCounts);
+            if (monthKeys.length === 0) {
+                monthContainer.innerHTML = '<div style="color: #8e8e93; font-size: 14px;">Brak danych</div>';
+            } else {
+                monthKeys.forEach(name => {
+                    let div = document.createElement('div');
+                    div.className = 'stats-item';
+                    div.innerHTML = `<div>${name}</div><div style="font-weight: bold;">${monthCounts[name]} szt.</div>`;
+                    monthContainer.appendChild(div);
+                });
+            }
+
+            // Wyświetlenie za cały okres
+            const totalKeys = Object.keys(totalCounts);
+            if (totalKeys.length === 0) {
+                totalContainer.innerHTML = '<div style="color: #8e8e93; font-size: 14px;">Brak danych</div>';
+            } else {
+                totalKeys.forEach(name => {
+                    let div = document.createElement('div');
+                    div.className = 'stats-item';
+                    div.innerHTML = `<div>${name}</div><div style="font-weight: bold; color: #007aff;">${totalCounts[name]} szt.</div>`;
+                    totalContainer.appendChild(div);
+                });
+            }
         }
 
         function clearData() {
