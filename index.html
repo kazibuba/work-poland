@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Ewidencja Pracy</title>
+    <style>
+        * { box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background: #f2f2f7; 
+            color: #000; 
+            display: flex; 
+            flex-direction: column;
+            padding: 15px;
+            padding-bottom: max(15px, env(safe-area-inset-bottom));
+            min-height: 100vh;
+        }
+
+        .card { 
+            background: #fff; 
+            border-radius: 16px; 
+            padding: 18px; 
+            margin-bottom: 15px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04); 
+        }
+
+        .dashboard-card { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            text-align: center;
+            min-height: 220px;
+        }
+
+        .dashboard-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 15px; 
+            width: 100%;
+        }
+
+        .stat-box { 
+            background: #f5f5f7; 
+            padding: 20px 10px; 
+            border-radius: 14px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .stat-title { 
+            font-size: 16px; 
+            color: #8e8e93; 
+            font-weight: 500; 
+            margin-bottom: 8px; 
+        }
+
+        .stat-val { 
+            font-size: 28px; 
+            font-weight: 800; 
+            color: #007aff; 
+        }
+
+        h2, h3 { margin-top: 0; font-weight: 700; }
+        label { display: block; margin: 10px 0 5px; font-weight: 600; font-size: 15px; }
+        select, input, button { 
+            width: 100%; 
+            padding: 14px; 
+            border-radius: 10px; 
+            border: 1px solid #ccc; 
+            font-size: 16px; 
+            margin-bottom: 10px; 
+        }
+        button { background: #007aff; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:active { opacity: 0.8; }
+        
+        .history-item, .part-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; font-size: 15px; }
+        .btn-del { background: #ff3b30; width: auto; padding: 6px 12px; margin: 0; font-size: 13px; }
+        .archive-total { font-weight: bold; font-size: 17px; color: #34c759; margin-bottom: 12px; }
+        
+        details { cursor: pointer; }
+        summary { font-weight: bold; font-size: 18px; padding: 4px 0; user-select: none; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+        summary::-webkit-details-marker { display: none; }
+        summary::after { content: "►"; font-size: 14px; color: #8e8e93; transition: transform 0.2s; }
+        details[open] summary::after { transform: rotate(90deg); }
+        .settings-content { margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; }
+        
+        .card-bottom {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ZAROBKI -->
+    <div class="card dashboard-card">
+        <div class="dashboard-title">📊 Zarobki</div>
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-title">Dzisiaj</div>
+                <div class="stat-val" id="todayPay">0 PLN</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-title">Bieżący miesiąc</div>
+                <div class="stat-val" id="monthPay">0 PLN</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DODAWANIE PRACY -->
+    <div class="card">
+        <h2>➕ Dodaj pracę</h2>
+        <label>Część</label>
+        <select id="partSelect" onchange="updatePrice()"></select>
+
+        <label>Cena za szt. (PLN)</label>
+        <input type="number" id="partPrice" step="0.01" placeholder="0.00">
+
+        <label>Ilość (szt.)</label>
+        <input type="number" id="partCount" placeholder="Wprowadź ilość">
+
+        <button onclick="addEntry()">Zapisz</button>
+    </div>
+
+    <!-- USTAWIENIA I ARCHIWUM -->
+    <div class="card card-bottom">
+        <details>
+            <summary>⚙️ Ustawienia i Archiwum</summary>
+            <div class="settings-content">
+                
+                <!-- ARCHIWUM MIESIĘCY -->
+                <h3>📅 Archiwum miesięcy</h3>
+                <label>Wybierz miesiąc:</label>
+                <input type="month" id="archiveMonth" onchange="renderArchive()">
+                <div id="archiveSummary" class="archive-total">Suma za miesiąc: 0 PLN</div>
+                <div id="archiveList" style="margin-bottom: 20px;"></div>
+
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+                <!-- ZARZĄDZANIE CZĘŚCIAMI -->
+                <h3>🛠️ Zarządzanie częściami</h3>
+                <input type="text" id="newPartName" placeholder="Nazwa części">
+                <input type="number" id="newPartPrice" step="0.01" placeholder="Domyślna cena (PLN)">
+                <button onclick="addNewPartType()" style="background: #34c759;">Dodaj nową część</button>
+                <div id="partsManagerList" style="margin-top: 15px; margin-bottom: 20px;"></div>
+
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+                <!-- STREFA NIEBEZPIECZNA -->
+                <h3>⚠️ Strefa niebezpieczna</h3>
+                <button onclick="clearData()" style="background: #ff3b30;">Zresetuj wszystkie dane</button>
+                
+            </div>
+        </details>
+    </div>
+
+    <script>
+        let parts = JSON.parse(localStorage.getItem('parts_dict')) || {};
+        let logs = JSON.parse(localStorage.getItem('work_logs')) || [];
+
+        function init() {
+            renderPartOptions();
+            renderPartsManager();
+            updatePrice();
+            renderStats();
+            
+            const now = new Date();
+            const monthStr = now.toISOString().slice(0, 7);
+            document.getElementById('archiveMonth').value = monthStr;
+            
+            renderArchive();
+        }
+
+        function renderPartOptions() {
+            const select = document.getElementById('partSelect');
+            select.innerHTML = '';
+            const keys = Object.keys(parts);
+            if (keys.length === 0) {
+                let opt = document.createElement('option');
+                opt.textContent = 'Brak części';
+                select.appendChild(opt);
+                document.getElementById('partPrice').value = '';
+                return;
+            }
+            for (let name in parts) {
+                let opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                select.appendChild(opt);
+            }
+        }
+
+        function renderPartsManager() {
+            const container = document.getElementById('partsManagerList');
+            container.innerHTML = '';
+            for (let name in parts) {
+                let div = document.createElement('div');
+                div.className = 'part-item';
+                div.innerHTML = `
+                    <div><strong>${name}</strong> — ${parts[name]} PLN</div>
+                    <button class="btn-del" onclick="deletePart('${name}')">Usuń</button>
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        function deletePart(name) {
+            delete parts[name];
+            localStorage.setItem('parts_dict', JSON.stringify(parts));
+            renderPartOptions();
+            renderPartsManager();
+            updatePrice();
+        }
+
+        function updatePrice() {
+            const selected = document.getElementById('partSelect').value;
+            if (selected && parts[selected] !== undefined) {
+                document.getElementById('partPrice').value = parts[selected];
+            } else {
+                document.getElementById('partPrice').value = '';
+            }
+        }
+
+        function addNewPartType() {
+            const name = document.getElementById('newPartName').value.trim();
+            const price = parseFloat(document.getElementById('newPartPrice').value);
+            if (!name || isNaN(price)) return alert('Wypełnij nazwę i cenę części');
+            
+            parts[name] = price;
+            localStorage.setItem('parts_dict', JSON.stringify(parts));
+            renderPartOptions();
+            renderPartsManager();
+            document.getElementById('partSelect').value = name;
+            updatePrice();
+            document.getElementById('newPartName').value = '';
+            document.getElementById('newPartPrice').value = '';
+        }
+
+        function addEntry() {
+            const name = document.getElementById('partSelect').value;
+            const price = parseFloat(document.getElementById('partPrice').value);
+            const count = parseInt(document.getElementById('partCount').value);
+
+            if (!name || name === 'Brak części' || isNaN(price) || isNaN(count) || count <= 0) {
+                return alert('Wybierz część i podaj poprawną ilość');
+            }
+
+            const total = price * count;
+            const entry = {
+                id: Date.now(),
+                date: new Date().toISOString(),
+                name: name,
+                price: price,
+                count: count,
+                total: total
+            };
+
+            logs.unshift(entry);
+            localStorage.setItem('work_logs', JSON.stringify(logs));
+            document.getElementById('partCount').value = '';
+
+            renderStats();
+            renderArchive();
+        }
+
+        function renderStats() {
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            let todayTotal = 0;
+            let monthTotal = 0;
+
+            logs.forEach(item => {
+                const d = new Date(item.date);
+                const itemDateStr = d.toISOString().split('T')[0];
+
+                if (itemDateStr === todayStr) {
+                    todayTotal += item.total;
+                }
+                if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+                    monthTotal += item.total;
+                }
+            });
+
+            document.getElementById('todayPay').textContent = todayTotal.toFixed(2) + ' PLN';
+            document.getElementById('monthPay').textContent = monthTotal.toFixed(2) + ' PLN';
+        }
+
+        function renderArchive() {
+            const selectedMonth = document.getElementById('archiveMonth').value;
+            if (!selectedMonth) return;
+
+            const container = document.getElementById('archiveList');
+            container.innerHTML = '';
+            
+            let totalForSelectedMonth = 0;
+
+            const filteredLogs = logs.filter(item => {
+                return item.date.startsWith(selectedMonth);
+            });
+
+            filteredLogs.forEach(item => {
+                totalForSelectedMonth += item.total;
+                const d = new Date(item.date);
+                const timeStr = d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                    <div>
+                        <strong>${item.name}</strong> (${item.count} szt. × ${item.price} PLN)<br>
+                        <small style="color:#8e8e93">${timeStr}</small>
+                    </div>
+                    <div style="font-weight:bold">${item.total.toFixed(2)} PLN</div>
+                `;
+                container.appendChild(div);
+            });
+
+            document.getElementById('archiveSummary').textContent = `Suma za ${selectedMonth}: ${totalForSelectedMonth.toFixed(2)} PLN`;
+        }
+
+        function clearData() {
+            if (confirm('Czy na pewno chcesz usunąć całą historię i części?')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
